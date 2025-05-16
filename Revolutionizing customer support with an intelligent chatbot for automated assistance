@@ -1,0 +1,32 @@
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
+import pandas as pd
+
+# Initialize the chatbot model
+class Chatbot:
+    def __init__(self):
+        self.model_name = "google/flan-t5-large"
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name)
+        self.history = []  # To store conversation logs
+
+    def get_response(self, user_input):
+        prompt = f"Customer support request: {user_input}\nResponse:"
+        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True)
+
+        with torch.no_grad():
+            outputs = self.model.generate(**inputs, max_new_tokens=100)
+
+        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        self.history.append({"User": user_input, "Chatbot": response.strip()})
+        return response.strip()
+
+bot = Chatbot()
+
+# Simple interactive loop
+while True:
+    user_msg = input("You: ")
+    if user_msg.lower() in ['exit', 'quit']:
+        break
+    reply = bot.get_response(user_msg)
+    print("Bot:", reply)
